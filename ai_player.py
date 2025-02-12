@@ -45,6 +45,12 @@ class AIPlayer:
         self.num_cells = num_cells
         self.cell_width = WINDOW_WIDTH // num_cells
         self.cell_height = WINDOW_HEIGHT // num_cells
+        
+        # Try to load saved state
+        try:
+            self.load_state()
+        except:
+            print("No saved state found, starting fresh")
 
         # Action space: Stay, Left, Right, Up, Down
         self.actions = [(0, 0), (-PLAYER_SPEED, 0), (PLAYER_SPEED, 0),
@@ -183,3 +189,34 @@ class AIPlayer:
 
         # Decay exploration rate
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
+        
+        # Save state periodically
+        if self.steps % 100 == 0:  # Save every 100 steps
+            self.save_state()
+            
+    def save_state(self):
+        """Save neural network weights and replay memory"""
+        torch.save({
+            'policy_net': self.policy_net.state_dict(),
+            'target_net': self.target_net.state_dict(),
+            'optimizer': self.optimizer.state_dict(),
+            'epsilon': self.epsilon,
+            'steps': self.steps
+        }, 'ai_state.pth')
+        
+        with open('ai_memory.pkl', 'wb') as f:
+            import pickle
+            pickle.dump(self.memory, f)
+            
+    def load_state(self):
+        """Load neural network weights and replay memory"""
+        checkpoint = torch.load('ai_state.pth')
+        self.policy_net.load_state_dict(checkpoint['policy_net'])
+        self.target_net.load_state_dict(checkpoint['target_net'])
+        self.optimizer.load_state_dict(checkpoint['optimizer'])
+        self.epsilon = checkpoint['epsilon']
+        self.steps = checkpoint['steps']
+        
+        with open('ai_memory.pkl', 'rb') as f:
+            import pickle
+            self.memory = pickle.load(f)
