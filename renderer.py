@@ -13,9 +13,7 @@ class Renderer:
 
 	def render(self, game_state):
 		self.screen.fill(WHITE)
-
-		if self.debug_mode:
-			self._draw_grid()
+		self._draw_grid()
 
 		self._draw_obstacles(game_state.obstacles)
 		self._draw_collectible(game_state.collectible)
@@ -28,7 +26,7 @@ class Renderer:
 		pygame.display.flip()
 
 	def _draw_grid(self):
-		grid_size = 100
+		grid_size = WINDOW_WIDTH // 10  # 10x10 grid to match AI's reference
 		for x in range(0, WINDOW_WIDTH, grid_size):
 			pygame.draw.line(self.screen, GRID_COLOR, (x, 0),
 			                 (x, WINDOW_HEIGHT))
