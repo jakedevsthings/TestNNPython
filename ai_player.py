@@ -51,7 +51,7 @@ class AIPlayer:
                        (0, -PLAYER_SPEED), (0, PLAYER_SPEED)]
 
         # Neural network initialization
-        self.input_dim = 4  # Normalized (player_x, player_y, collectible_x, collectible_y)
+        self.input_dim = 8  # Normalized (player_x, player_y, collectible_x, collectible_y, dist_left, dist_right, dist_top, dist_bottom)
         self.output_dim = len(self.actions)
         self.policy_net = DQN(self.input_dim, self.output_dim)  # Main network for action selection
         self.target_net = DQN(self.input_dim, self.output_dim)  # Target network for stable learning
@@ -77,6 +77,7 @@ class AIPlayer:
     def get_state(self, player_x, player_y, collectible_x, collectible_y):
         """
         Converts raw game coordinates to normalized state representation.
+        Includes distances to walls in each direction.
         
         Args:
             player_x, player_y: Player's position coordinates
@@ -85,11 +86,21 @@ class AIPlayer:
         Returns:
             torch.Tensor: Normalized state vector between 0 and 1
         """
+        # Calculate distances to walls
+        dist_left = player_x
+        dist_right = WINDOW_WIDTH - (player_x + PLAYER_SIZE)
+        dist_top = player_y
+        dist_bottom = WINDOW_HEIGHT - (player_y + PLAYER_SIZE)
+
         state = torch.tensor([
             player_x / WINDOW_WIDTH,
             player_y / WINDOW_HEIGHT,
             collectible_x / WINDOW_WIDTH,
-            collectible_y / WINDOW_HEIGHT
+            collectible_y / WINDOW_HEIGHT,
+            dist_left / WINDOW_WIDTH,
+            dist_right / WINDOW_WIDTH,
+            dist_top / WINDOW_HEIGHT,
+            dist_bottom / WINDOW_HEIGHT
         ], dtype=torch.float32)
         return state
 
