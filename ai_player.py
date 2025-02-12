@@ -24,9 +24,9 @@ class AIPlayer:
 		self.q_table = {}
 
 		# Q-learning hyperparameters
-		self.learning_rate = 0.3  # Higher learning rate for faster updates
-		self.discount_factor = 0.8  # Lower discount to focus more on immediate rewards
-		self.epsilon = 0.2  # Higher exploration rate to try more actions
+		self.learning_rate = 0.4  # Even higher learning rate
+		self.discount_factor = 0.7  # More focus on immediate rewards
+		self.epsilon = 0.3  # More exploration
 
 	def get_state(self, player_x, player_y, collectible_x, collectible_y):
 		"""
