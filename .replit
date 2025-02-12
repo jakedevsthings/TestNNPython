@@ -1,3 +1,4 @@
+audio = true
 entrypoint = "main.py"
 modules = ["python-3.11"]
 
@@ -13,3 +14,30 @@ requiredFiles = [".replit", "replit.nix"]
 [deployment]
 run = ["python3", "main.py"]
 deploymentTarget = "cloudrun"
+
+[workflows]
+runButton = "Run Game"
+
+[[workflows.workflow]]
+name = "Run Game"
+author = 1170190
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python main.py"
+
+[[workflows.workflow]]
+name = "Run Game with AI"
+author = 1170190
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python main.py --ai"
+
+[[workflows.workflow]]
+name = "Run Game with Debug"
+author = 1170190
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python main.py --debug"

@@ -1,0 +1,280 @@
+# Import necessary libraries
+import pygame  # Main game library for graphics and game logic
+import sys  # For system-level operations like exiting the game
+import os  # For operating system related operations
+import random  # For generating random positions
+import argparse  # For command line arguments
+
+# Configure SDL video driver for compatibility
+os.environ['SDL_VIDEODRIVER'] = 'x11'
+
+# Parse command line arguments
+parser = argparse.ArgumentParser()
+parser.add_argument('--debug', action='store_true', help='Enable debug features')
+args = parser.parse_args()
+DEBUG_MODE = args.debug
+
+# Initialize Pygame
+pygame.init()
+
+# Set up the game window with specified dimensions
+width, height = 600, 600
+screen = pygame.display.set_mode((width, height))
+pygame.display.set_caption("Move the Square Game")
+
+# Define color constants using RGB values
+white = (255, 255, 255)  # Background color
+blue = (0, 0, 255)  # Player color
+red = (255, 0, 0)  # Obstacle color
+black = (0, 0, 0)  # Collectible and text color
+orange = (255, 165, 0)  # Collision flash color
+margin = 20  # Safe margin distance for positioning
+
+# Flash animation variables
+flash_duration = 10  # frames
+flash_timer = 0
+
+# Set up player starting position and properties
+player_size = 50  # Size of the player square
+player_x = width // 2 - player_size // 2  # Center horizontally
+player_y = height // 2 - player_size // 2  # Center vertically
+player_speed = 5  # Movement speed in pixels per frame
+
+# Create multiple obstacles at random positions
+obstacle_size = 30
+obstacles = []
+
+def check_collision(x1, y1, size1, x2, y2, size2):
+	"""
+	Check if two squares are colliding using their positions and sizes
+	Returns True if objects overlap, False otherwise
+	"""
+	return (x1 <= x2 + size2 and 
+			x1 + size1 >= x2 and 
+			y1 <= y2 + size2 and 
+			y1 + size1 >= y2)
+
+def is_position_safe(x, y, size, obstacles, ignore_player=False):
+	"""
+	Check if a position is safe (no overlapping with obstacles or player)
+
+	Parameters:
+	x : int
+		The x-coordinate of the top-left corner of the position to check.
+	y : int
+		The y-coordinate of the top-left corner of the position to check.
+	size : int
+		The size of the square to check for safeness.
+	obstacles : list
+		A list of current obstacles, each defined by a list with x and y positions.
+	ignore_player : bool, optional
+		Whether to ignore collisions with the player when checking (default is False).
+	"""
+	# Add margin to keep items away from screen edges
+	if x < player_size or x > width - size - player_size or y < player_size or y > height - size - player_size:
+		return False
+
+	# Check overlap with obstacles
+	for obs in obstacles:
+		if check_collision(x, y, size, obs[0], obs[1], obstacle_size):
+			return False
+
+	# Check overlap with player if not ignored
+	if not ignore_player:
+		player_margin = player_size + margin
+		if (abs(x - player_x) < player_margin and 
+			abs(y - player_y) < player_margin):
+			return False
+
+	return True
+
+def generate_obstacles():
+	new_obstacles = []
+	max_attempts = 100  # Prevent infinite loops
+	safe_margin = player_size  # Minimum spacing between obstacles and edges
+
+	for _ in range(8):
+		attempts = 0
+		while attempts < max_attempts:
+			# Generate position with margin from edges
+			x = random.randint(player_size, width - obstacle_size - player_size)
+			y = random.randint(player_size, height - obstacle_size - player_size)
+
+			# Check if position is safe from other obstacles and player
+			is_safe = True
+
+			# Check distance from other obstacles
+			for obs in new_obstacles:
+				min_distance = player_size + obstacle_size + 20  # Add extra spacing for player movement
+				if (abs(x - obs[0]) < min_distance and 
+					abs(y - obs[1]) < min_distance):
+					is_safe = False
+					break
+
+			# Check distance from player's spawn position
+			spawn_x = width // 2 - player_size // 2
+			spawn_y = height // 2 - player_size // 2
+
+			# More strict spawn position check
+			if check_collision(x, y, obstacle_size, spawn_x, spawn_y, player_size):
+				is_safe = False
+			elif (abs(x - spawn_x) < safe_margin + obstacle_size or 
+				  abs(y - spawn_y) < safe_margin + player_size):
+				is_safe = False
+
+			if is_safe:
+				new_obstacles.append([x, y])
+				break
+			attempts += 1
+
+	return new_obstacles
+
+obstacles = generate_obstacles()
+
+# Initialize score and set up font for displaying text
+score = 0
+font = pygame.font.Font(None, 36)
+
+def debug_spawn_collision():
+	"""Debug function to check and log spawn collisions"""
+	if not DEBUG_MODE:
+		return False
+
+	print("\nDebug Spawn Information:")
+	# Round coordinates to nearest integer for cleaner output
+	print(f"Player position: x={round(player_x)}, y={round(player_y)}")
+	print(f"Collectible position: x={round(collectible[0])}, y={round(collectible[1])}")
+	print("Obstacles positions:")
+	for i, obs in enumerate(obstacles):
+		print(f"Obstacle {i}: x={round(obs[0])}, y={round(obs[1])}")
+		if check_collision(player_x, player_y, player_size, obs[0], obs[1], obstacle_size):
+			print(f"WARNING: Player spawned on obstacle {i}!")
+			return True
+	return False
+
+# Set up collectible item at random position
+collectible_size = 20
+collectible = [
+	random.randint(0, width - collectible_size),
+	random.randint(0, height - collectible_size)
+]
+
+# Initialize game clock for controlling frame rate
+clock = pygame.time.Clock()
+
+
+if __name__ == "__main__":
+	# Main game loop
+	while True:
+		# Handle window close event
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				pygame.quit()
+				sys.exit()
+
+		# Handle player movement based on keyboard input
+		keys = pygame.key.get_pressed()
+		old_x, old_y = player_x, player_y  # Store previous position for collision handling
+
+		# Update player position based on arrow key input
+		if keys[pygame.K_LEFT]:
+			player_x -= player_speed
+		if keys[pygame.K_RIGHT]:
+			player_x += player_speed
+		if keys[pygame.K_UP]:
+			player_y -= player_speed
+		if keys[pygame.K_DOWN]:
+			player_y += player_speed
+
+		# Keep player within screen boundaries
+		player_x = max(0, min(width - player_size, player_x))
+		player_y = max(0, min(height - player_size, player_y))
+
+		# Check for collisions with obstacles
+		collision = False
+		for obstacle in obstacles:
+			if check_collision(player_x, player_y, player_size,
+							 obstacle[0], obstacle[1], obstacle_size):
+				player_x, player_y = old_x, old_y  # Move back to previous position
+				collision = True
+				flash_timer = flash_duration
+
+		# Check if player collected the collectible
+		if check_collision(player_x, player_y, player_size,
+						  collectible[0], collectible[1], collectible_size):
+			score += 10
+			# Regenerate obstacles and move collectible
+			obstacles = generate_obstacles()
+			spawn_collision = True
+			max_spawn_attempts = 10
+			spawn_attempts = 0
+
+			while spawn_collision and spawn_attempts < max_spawn_attempts:
+				obstacles = generate_obstacles()
+				spawn_collision = debug_spawn_collision()
+				if spawn_collision:
+					print(f"ERROR: Regenerating obstacles (attempt {spawn_attempts + 1}/{max_spawn_attempts})...")
+				spawn_attempts += 1
+
+			if spawn_collision:
+				print("WARNING: Could not find valid obstacle configuration!")
+
+			# Find safe position for collectible
+			while True:
+				new_x = random.randint(0, width - collectible_size)
+				new_y = random.randint(0, height - collectible_size)
+				if is_position_safe(new_x, new_y, collectible_size, obstacles):
+					collectible = [new_x, new_y]
+					# Re-run debug info after updating collectible position
+					debug_spawn_collision()
+					break
+
+		# Render game objects
+		screen.fill(white)  # Clear screen with background color
+
+		# Draw grid if debug mode is on
+		if DEBUG_MODE:
+			grid_color = (200, 200, 200)  # Light grey
+			grid_size = 100
+			for x in range(0, width, grid_size):
+				pygame.draw.line(screen, grid_color, (x, 0), (x, height))
+			for y in range(0, height, grid_size):
+				pygame.draw.line(screen, grid_color, (0, y), (width, y))
+
+		# Draw all obstacles
+		for i, obstacle in enumerate(obstacles):
+			pygame.draw.rect(screen, red,
+							(obstacle[0], obstacle[1], obstacle_size, obstacle_size))
+			if DEBUG_MODE:
+				# Draw black dot at obstacle top-left
+				pygame.draw.circle(screen, black, (obstacle[0], obstacle[1]), 3)
+				# Draw obstacle number
+				number_text = font.render(str(i), True, black)
+				text_rect = number_text.get_rect(center=(obstacle[0] + obstacle_size/2, obstacle[1] + obstacle_size/2))
+				screen.blit(number_text, text_rect)
+
+		# Draw collectible
+		pygame.draw.rect(screen, black,
+						(collectible[0], collectible[1], collectible_size, collectible_size))
+
+		# Draw player with flash effect on collision
+		player_color = orange if flash_timer > 0 else blue
+		pygame.draw.rect(screen, player_color,
+						(player_x, player_y, player_size, player_size))
+		if flash_timer > 0:
+			flash_timer -= 1
+
+		# Display current score and coordinates
+		score_text = font.render(f'Score: {score}', True, black)
+		screen.blit(score_text, (10, 10))
+
+		# Draw coordinate markers if debug mode is on
+		if DEBUG_MODE:
+			pygame.draw.circle(screen, (255, 0, 0), (player_x, player_y), 3)  # Red dot at player top-left
+			pygame.draw.circle(screen, (0, 255, 0), (collectible[0], collectible[1]), 3)  # Green dot at collectible top-left
+
+		# Update display
+		pygame.display.flip()
+
+		# Maintain 60 FPS
+		clock.tick(60)
