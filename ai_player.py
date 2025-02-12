@@ -46,11 +46,6 @@ class AIPlayer:
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=0.001)
         self.criterion = nn.MSELoss()
 
-        # Initialize networks first
-        self.policy_net = DQN(self.input_dim, self.output_dim)
-        self.target_net = DQN(self.input_dim, self.output_dim)
-        self.optimizer = optim.Adam(self.policy_net.parameters(), lr=0.001)
-
         # Try to load saved state
         try:
             if os.path.exists('ai_state.pth') and os.path.exists('ai_memory.pkl'):
