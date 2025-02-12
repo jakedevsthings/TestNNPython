@@ -1,4 +1,5 @@
 
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -48,9 +49,12 @@ class AIPlayer:
         
         # Try to load saved state
         try:
-            self.load_state()
-        except:
-            print("No saved state found, starting fresh")
+            if os.path.exists('ai_state.pth') and os.path.exists('ai_memory.pkl'):
+                self.load_state()
+            else:
+                print("No saved state found, starting fresh")
+        except Exception as e:
+            print(f"Error loading state: {e}, starting fresh")
 
         # Action space: Stay, Left, Right, Up, Down
         self.actions = [(0, 0), (-PLAYER_SPEED, 0), (PLAYER_SPEED, 0),
@@ -191,7 +195,7 @@ class AIPlayer:
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
         
         # Save state periodically
-        if self.steps % 100 == 0:  # Save every 100 steps
+        if self.steps % 20 == 0:  # Save every 20 steps
             self.save_state()
             
     def save_state(self):
