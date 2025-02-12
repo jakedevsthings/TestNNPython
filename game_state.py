@@ -11,18 +11,23 @@ class GameState:
 		self.flash_duration = 10
 		self.flash_timer = 0
 
-		# Player state
-		self.player_x = WINDOW_WIDTH // 2 - PLAYER_SIZE // 2
-		self.player_y = WINDOW_HEIGHT // 2 - PLAYER_SIZE // 2
-
 		# Game objects
 		self.obstacles = self.generate_obstacles()
 
-		# Regenerate obstacles if player would spawn on them
+		# Player state - ensure spawn point is safe
+		spawn_attempts = 0
+		self.player_x = WINDOW_WIDTH // 2 - PLAYER_SIZE // 2
+		self.player_y = WINDOW_HEIGHT // 2 - PLAYER_SIZE // 2
+		
 		while any(
 		    check_collision(self.player_x, self.player_y, PLAYER_SIZE, obs[0],
 		                    obs[1], OBSTACLE_SIZE) for obs in self.obstacles):
-			self.obstacles = self.generate_obstacles()
+			spawn_attempts += 1
+			if spawn_attempts > 10:  # If too many attempts, regenerate obstacles
+				self.obstacles = self.generate_obstacles()
+				spawn_attempts = 0
+			self.player_x = random.randint(PLAYER_SIZE, WINDOW_WIDTH - PLAYER_SIZE * 2)
+			self.player_y = random.randint(PLAYER_SIZE, WINDOW_HEIGHT - PLAYER_SIZE * 2)
 
 		self.collectible = self.generate_collectible()
 
