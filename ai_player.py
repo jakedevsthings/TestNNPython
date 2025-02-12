@@ -86,3 +86,12 @@ class AIPlayer:
 			print(f"Reward: {reward}")
 			print(f"New State: {new_state}")
 			print(f"Q-value changed: {old_value:.2f} -> {new_value:.2f}")
+			
+			# Print Q-table for current state
+			print("\nQ-Table for Current State:")
+			print("+---------+--------+---------+-------+--------+")
+			print("| Stay    | Left   | Right   | Up    | Down   |")
+			print("+---------+--------+---------+-------+--------+")
+			q_values = self.q_table[old_state]
+			print(f"| {q_values[0]:7.2f} | {q_values[1]:6.2f} | {q_values[2]:7.2f} | {q_values[3]:5.2f} | {q_values[4]:6.2f} |")
+			print("+---------+--------+---------+-------+--------+")
