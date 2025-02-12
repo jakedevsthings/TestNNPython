@@ -74,6 +74,12 @@ def main():
 			                   OBSTACLE_SIZE):
 				game_state.player_x, game_state.player_y = old_x, old_y
 				game_state.flash_timer = game_state.flash_duration
+				if args.ai and ai_player is not None and state is not None and action is not None:
+					new_state = ai_player.get_state(game_state.player_x, 
+					                               game_state.player_y,
+					                               game_state.collectible[0],
+					                               game_state.collectible[1])
+					ai_player.update(state, action, -1.0, new_state)  # Negative reward for hitting obstacle
 
 		reward = 0
 		if check_collision(game_state.player_x, game_state.player_y,
