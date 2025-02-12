@@ -48,18 +48,21 @@ class GameState:
 		return new_obstacles
 
 	def is_position_safe_for_obstacle(self, x, y, current_obstacles):
-		# Check if obstacle overlaps with spawn area
-		spawn_x = WINDOW_WIDTH // 2 - PLAYER_SIZE * 2
-		spawn_y = WINDOW_HEIGHT // 2 - PLAYER_SIZE * 2
-		spawn_size = PLAYER_SIZE * 4  # Create a larger safe spawn area
+		# Create a larger safe zone around player spawn
+		spawn_x = WINDOW_WIDTH // 2 - PLAYER_SIZE * 3
+		spawn_y = WINDOW_HEIGHT // 2 - PLAYER_SIZE * 3
+		spawn_size = PLAYER_SIZE * 6  # Even larger safe spawn area
 
-		if check_collision(x, y, OBSTACLE_SIZE, spawn_x, spawn_y, spawn_size):
+		# Check if obstacle would collide with spawn area
+		if (x < spawn_x + spawn_size and x + OBSTACLE_SIZE > spawn_x and
+		    y < spawn_y + spawn_size and y + OBSTACLE_SIZE > spawn_y):
 			return False
 
+		# Check minimum distance from other obstacles
 		for obs in current_obstacles:
-			min_distance = PLAYER_SIZE + OBSTACLE_SIZE + 20
-			if (abs(x - obs[0]) < min_distance
-			    and abs(y - obs[1]) < min_distance):
+			min_distance = PLAYER_SIZE + OBSTACLE_SIZE + 30
+			if (abs(x - obs[0]) < min_distance and
+			    abs(y - obs[1]) < min_distance):
 				return False
 
 		return True
