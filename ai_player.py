@@ -46,14 +46,21 @@ class AIPlayer:
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=0.001)
         self.criterion = nn.MSELoss()
 
+        # Initialize networks first
+        self.policy_net = DQN(self.input_dim, self.output_dim)
+        self.target_net = DQN(self.input_dim, self.output_dim)
+        self.optimizer = optim.Adam(self.policy_net.parameters(), lr=0.001)
+
         # Try to load saved state
         try:
             if os.path.exists('ai_state.pth') and os.path.exists('ai_memory.pkl'):
                 self.load_state()
             else:
                 print("No saved state found, starting fresh")
+                self.target_net.load_state_dict(self.policy_net.state_dict())
         except Exception as e:
             print(f"Error loading state: {e}, starting fresh")
+            self.target_net.load_state_dict(self.policy_net.state_dict())
 
         # Action space: Stay, Left, Right, Up, Down
         self.actions = [(0, 0), (-PLAYER_SPEED, 0), (PLAYER_SPEED, 0),
