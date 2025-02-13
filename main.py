@@ -31,6 +31,9 @@ def main():
 	ai_player = None
 	if args.ai:
 		from ai_player import AIPlayer
+		import verify_memory
+		if not verify_memory.verify_memory():
+			print("Starting with fresh AI state")
 		ai_player = AIPlayer()
 
 	while True:
@@ -95,11 +98,22 @@ def main():
 			                                    game_state.player_y,
 			                                    game_state.collectible[0],
 			                                    game_state.collectible[1])
-			if any(
+			# Check for wall collisions
+			is_at_wall = (game_state.player_x <= 0 or 
+			             game_state.player_x >= WINDOW_WIDTH - PLAYER_SIZE or
+			             game_state.player_y <= 0 or 
+			             game_state.player_y >= WINDOW_HEIGHT - PLAYER_SIZE)
+			
+			# Check for obstacle collisions
+			is_at_obstacle = any(
 			    check_collision(game_state.player_x, game_state.player_y,
 			                    PLAYER_SIZE, obs[0], obs[1], OBSTACLE_SIZE)
-			    for obs in game_state.obstacles):
+			    for obs in game_state.obstacles)
+			
+			if is_at_obstacle:
 				reward = -50
+			elif is_at_wall:
+				reward = -1  # Small penalty for wall sticking
 
 			if state is not None and action is not None:
 				ai_player.update(state, action, reward, current_state)

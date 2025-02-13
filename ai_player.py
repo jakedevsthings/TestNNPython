@@ -34,6 +34,9 @@ class AIPlayer:
         self.num_cells = num_cells
         self.cell_width = WINDOW_WIDTH // num_cells
         self.cell_height = WINDOW_HEIGHT // num_cells
+        self.stuck_counter = 0
+        self.last_positions = []
+        self.position_history_size = 5
 
         # Neural network initialization
         self.input_dim = 8  # Normalized (player_x, player_y, collectible_x, collectible_y, dist_left, dist_right, dist_top, dist_bottom)
@@ -98,6 +101,22 @@ class AIPlayer:
         return state
 
     def get_action(self, state):
+        # Track position history
+        current_pos = (state[0].item(), state[1].item())
+        self.last_positions.append(current_pos)
+        if len(self.last_positions) > self.position_history_size:
+            self.last_positions.pop(0)
+            
+        # Check if stuck
+        if len(self.last_positions) == self.position_history_size:
+            pos_variance = np.var([p[0] for p in self.last_positions]) + np.var([p[1] for p in self.last_positions])
+            if pos_variance < 0.0001:  # Small variance indicates being stuck
+                self.stuck_counter += 1
+                if self.stuck_counter > 3:
+                    return np.random.randint(len(self.actions))  # Force random action
+            else:
+                self.stuck_counter = 0
+
         if np.random.random() < self.epsilon:
             return np.random.randint(len(self.actions))
 
