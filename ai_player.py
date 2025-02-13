@@ -122,7 +122,8 @@ class AIPlayer:
 
         with torch.no_grad():
             q_values = self.policy_net(state)
-            return torch.argmax(q_values).item()
+            action_idx = torch.argmax(q_values).item()
+            return int(action_idx)  # Ensure integer index type
 
     def update(self, old_state, action, reward, new_state):
         # Store experience in replay memory
