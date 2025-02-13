@@ -108,8 +108,12 @@ class AIPlayer:
     def update(self, old_state, action, reward, new_state):
         # Store experience in replay memory
         self.memory.append((old_state, action, reward, new_state))
-        if len(self.memory) > self.memory_size:
+        while len(self.memory) > self.memory_size:
             self.memory.pop(0)
+            
+        # Force memory cleanup by saving periodically
+        if len(self.memory) % 1000 == 0:
+            self.save_state()
 
         # Print learning progress for significant events
         if reward != 0:
